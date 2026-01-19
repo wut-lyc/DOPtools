@@ -1,0 +1,6 @@
+stat R2 RMSE MAE
+logTg.consensus -0.004 0.143 0.114
+logTg.predicted.repeat3 -0.006 0.144 0.114
+logTg.predicted.repeat2 -0.005 0.144 0.114
+logTg.predicted.repeat1 -0.004 0.143 0.114
+fit -0.000 0.143 0.114

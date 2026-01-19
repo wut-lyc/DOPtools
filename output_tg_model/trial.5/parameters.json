@@ -1,0 +1,18 @@
+{
+    "fit_score": 0.02208394799086555,
+    "desc": "circus",
+    "scaling": "scaled",
+    "method": "SVR",
+    "C": 8.780101845592251e-06,
+    "kernel": "linear",
+    "coef0": -3.1403484790031726,
+    "ntrials": 100,
+    "cv_splits": 5,
+    "cv_repeats": 3,
+    "jobs": 1,
+    "timeout": 120,
+    "earlystop": [
+        0,
+        0
+    ]
+}
