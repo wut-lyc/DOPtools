@@ -20,10 +20,18 @@ from doptools import ChythonCircus
 from doptools.optimizer import launch_study
 from doptools.cli.plotter import make_regression_plot
 
-# Windows 下 multiprocessing 设置
+# 多进程设置
 import multiprocessing
+import platform
+
 if __name__ == "__main__":
     multiprocessing.freeze_support()
+    # Linux 使用 fork (更快), Windows 使用 spawn
+    if platform.system() == "Linux":
+        multiprocessing.set_start_method("fork", force=True)
+        N_JOBS = 192  # Linux 上使用 192 核
+    else:
+        N_JOBS = 1  # Windows 建议用 1 避免问题
 
 # ============================================================
 # Step 1: 加载数据
@@ -120,7 +128,7 @@ if __name__ == "__main__":
         100,                          # 试验次数 (可调整)
         5,                            # K-fold 折数
         3,                            # 重复次数
-        1,                            # CPU 数量 (Windows 用 1)
+        N_JOBS,                       # CPU 数量 (Linux=4, Windows=1)
         120,                          # 超时时间
         (0, 0),                       # 早停 (禁用)
         True                          # 写入文件
