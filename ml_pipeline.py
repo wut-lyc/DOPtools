@@ -115,9 +115,9 @@ class MLPipeline:
         
         # Mordred2D
         print("\\n[2/4] Mordred 2D...")
-        mordred_calc = Mordred2DCalculator(fmt="smiles")
-        mordred_calc.fit(smiles_clean)
-        mordred_desc = mordred_calc.transform(smiles_clean)
+        mordred_calc = Mordred2DCalculator(fmt="mol")
+        mordred_calc.fit(mols_clean)
+        mordred_desc = mordred_calc.transform(mols_clean)
         mordred_desc.columns = ["Mordred_" + c for c in mordred_desc.columns]
         all_descriptors.append(mordred_desc)
         print(f"  ✓ {mordred_desc.shape[1]} 个描述符")
