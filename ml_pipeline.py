@@ -157,7 +157,7 @@ class MLPipeline:
     
     def handle_missing_values(self, X, method):
         """步骤2: 缺失值处理"""
-        print(f"\\n缺失值处理方法: {method}")
+        print(f"缺失值处理方法: {method}")
         
         if method == 'drop':
             X_filled = X.dropna(axis=1)
@@ -183,7 +183,7 @@ class MLPipeline:
     
     def scale_data(self, X, method):
         """步骤3: 标准化/归一化"""
-        print(f"\\n数据缩放方法: {method}")
+        print(f"数据缩放方法: {method}")
         
         if method == 'standard':
             scaler = StandardScaler()
@@ -213,13 +213,13 @@ class MLPipeline:
         initial_n = X.shape[1]
         
         # 1. 去除方差为0的特征
-        print("\\n[1/3] 去除方差为0的特征...")
+        print("[1/3] 去除方差为0的特征...")
         zero_var = X.std() == 0
         X_clean = X.loc[:, ~zero_var]
         print(f"  删除 {zero_var.sum()} 个零方差特征")
         
         # 2. 去除95%样本取同一值的特征
-        print("\\n[2/3] 去除95%样本同值的特征...")
+        print("[2/3] 去除95%样本同值的特征...")
         to_drop = []
         for col in X_clean.columns:
             value_counts = X_clean[col].value_counts()
@@ -231,7 +231,7 @@ class MLPipeline:
         print(f"  删除 {len(to_drop)} 个高同值特征")
         
         # 3. 去除高相关性特征 (>0.95)
-        print("\\n[3/3] 去除高相关性特征 (>0.95)...")
+        print("[3/3] 去除高相关性特征 (>0.95)...")
         corr_matrix = X_clean.corr().abs()
         target_corr = X_clean.corrwith(y).abs()
         
@@ -250,12 +250,12 @@ class MLPipeline:
         X_clean = X_clean.drop(columns=list(to_drop_corr))
         print(f"  删除 {len(to_drop_corr)} 个高相关特征")
         
-        print(f"\\n清洗结果: {initial_n} → {X_clean.shape[1]} 特征")
+        print(f"清洗结果: {initial_n} → {X_clean.shape[1]} 特征")
         return X_clean
     
     def select_features(self, X_train, y_train, X_test, method, n_features=None):
         """步骤5: 特征选择"""
-        print(f"\\n特征选择: {method}", end="")
+        print(f"特征选择: {method}", end="")
         if n_features:
             print(f" (保留{n_features}个)")
         else:
@@ -321,12 +321,12 @@ class MLPipeline:
                 }
             },
             'SVR': {
-                'model': SVR(cache_size=2000),
+                'model': SVR(cache_size=50000),
                 'params': {
-                    'C': [0.1, 1, 10, 100],
-                    'epsilon': [0.01, 0.1, 0.2],
+                    'C': [0.1, 1, 10, 100, 1000],
+                    'epsilon': [0.001, 0.01, 0.1, 0.2],
                     'kernel': ['rbf', 'linear', 'poly'],
-                    'gamma': ['scale', 'auto']
+                    'gamma': ['scale', 'auto', 0.1, 0.01]
                 }
             },
             'KNN': {
@@ -403,7 +403,7 @@ class MLPipeline:
     
     def y_randomization_test(self, model, X, y, n_iterations=100):
         """Y随机化检验"""
-        print(f"\\n  Y随机化检验 ({n_iterations}次)...")
+        print(f"  Y随机化检验 ({n_iterations}次)...")
         random_r2_scores = []
         
         for i in range(n_iterations):
@@ -460,18 +460,7 @@ class MLPipeline:
             print(f"  > R²(test)={r2_test:.4f} | R²(train)={r2_train:.4f} | RMSE={rmse_test:.4f}")
             print(f"  > 最佳参数: {grid_search.best_params_}")
             
-            # Q² 计算
-            print(f"  > 计算 Q² (LOO & LMO)...", flush=True)
-            q2_loo = self.calculate_q2_loo(best_model, X_full, y_full)
-            q2_lmo = self.calculate_q2_lmo(best_model, X_full, y_full)
-            print(f"  > Q²_LOO={q2_loo:.4f} | Q²_LMO={q2_lmo:.4f}")
-            
-            # Y随机化
-            y_random_r2 = self.y_randomization_test(best_model, X_full, y_full, n_iterations=50)
-            y_random_mean = np.mean(y_random_r2)
-            print(f"  > Y随机化R²均值: {y_random_mean:.4f}")
-            
-            # 保存结果
+            # 保存结果 (Q2和Y随机化将在筛选后计算)
             result = {
                 'model_name': model_name,
                 'pipeline_config': pipeline_config,
@@ -480,13 +469,15 @@ class MLPipeline:
                 'r2_test': r2_test,
                 'rmse_test': rmse_test,
                 'mae_test': mae_test,
-                'q2_loo': q2_loo,
-                'q2_lmo': q2_lmo,
-                'y_random_r2_mean': y_random_mean,
-                'y_random_r2_std': np.std(y_random_r2),
+                'q2_loo': None,
+                'q2_lmo': None,
+                'y_random_r2_mean': None,
+                'y_random_r2_std': None,
                 'best_model': best_model,
                 'y_pred_test': y_pred_test,
-                'y_test': y_test
+                'y_test': y_test,
+                'X_full': X_full,
+                'y_full': y_full
             }
             
             results_list.append(result)
@@ -571,13 +562,52 @@ class MLPipeline:
                     all_results.extend(results)
         
         self.results = all_results
+        
+        # 深度验证 Top 10
+        self.validate_top_models(self.results, top_n=10)
+        
         return all_results
+    
+    def validate_top_models(self, all_results, top_n=10):
+        """对表现最好的模型进行深度验证"""
+        print("-" * 80)
+        print(f"筛选完成，开始对 Top {top_n} 模型进行深度验证 (Q², Y-Randomization)...")
+        print("-" * 80)
+        
+        # 按 R2 test 降序排序
+        all_results.sort(key=lambda x: x['r2_test'], reverse=True)
+        top_models = all_results[:top_n]
+        
+        for i, res in enumerate(top_models):
+            print(f"\n[验证 Top {i+1}] {res['model_name']}")
+            config = res['pipeline_config']
+            config_str = f"Missing={config['missing']}, Scale={config['scaling']}, Feat={config['feature_selection']}(n={config['n_features']})"
+            print(f"配置: {config_str}")
+            print(f"R² (test): {res['r2_test']:.4f}")
+            
+            model = res['best_model']
+            X_full = res['X_full']
+            y_full = res['y_full']
+            
+            # Q2 计算
+            print(f"  > 计算 Q² (LOO & LMO)...", flush=True)
+            res['q2_loo'] = self.calculate_q2_loo(model, X_full, y_full)
+            res['q2_lmo'] = self.calculate_q2_lmo(model, X_full, y_full)
+            print(f"  > Q²_LOO={res['q2_loo']:.4f} | Q²_LMO={res['q2_lmo']:.4f}")
+            
+            # Y随机化
+            y_random_r2 = self.y_randomization_test(model, X_full, y_full, n_iterations=50)
+            y_random_mean = np.mean(y_random_r2)
+            print(f"  > Y随机化R²均值: {y_random_mean:.4f}")
+            
+            res['y_random_r2_mean'] = y_random_mean
+            res['y_random_r2_std'] = np.std(y_random_r2)
     
     def plot_results(self):
         """绘制结果对比图"""
-        print("\\n" + "="*70)
+        print("-" * 70)
         print("生成可视化结果")
-        print("="*70)
+        print("-" * 70)
         
         df_results = pd.DataFrame([{
             'Model': r['model_name'],
@@ -676,7 +706,7 @@ def main():
     print(f"并行核心数: {args.n_jobs}")
     
     data = pd.read_csv(args.input)
-    print(f"\\n加载了 {len(data)} 条记录")
+    print(f"加载了 {len(data)} 条记录")
     
     # 运行pipeline
     pipeline = MLPipeline(args.output_dir, args.n_jobs)
@@ -687,26 +717,26 @@ def main():
     
     # 输出最佳模型
     best_result = max(results, key=lambda x: x['r2_test'])
-    print("\\n" + "="*70)
+    print("-" * 70)
     print("最佳模型")
-    print("="*70)
+    print("-" * 70)
     print(f"模型: {best_result['model_name']}")
     print(f"配置: {best_result['pipeline_config']}")
     print(f"最佳参数: {best_result['best_params']}")
-    print(f"\\nR² (test):  {best_result['r2_test']:.4f}")
+    print(f"R² (test):  {best_result['r2_test']:.4f}")
     print(f"Q²_LOO:     {best_result['q2_loo']:.4f}")
     print(f"Q²_LMO:     {best_result['q2_lmo']:.4f}")
     print(f"RMSE:       {best_result['rmse_test']:.4f}")
-    print(f"\\nY随机化R² (mean±std): {best_result['y_random_r2_mean']:.4f} ± {best_result['y_random_r2_std']:.4f}")
+    print(f"Y随机化R² (mean±std): {best_result['y_random_r2_mean']:.4f} ± {best_result['y_random_r2_std']:.4f}")
     
     # 保存最佳模型
     with open(Path(args.output_dir) / 'best_model.pkl', 'wb') as f:
         pickle.dump(best_result['best_model'], f)
-    print(f"\\n✓ 最佳模型已保存")
+    print(f"✓ 最佳模型已保存")
     
-    print("\\n" + "="*70)
+    print("-" * 70)
     print("Pipeline完成！")
-    print("="*70)
+    print("-" * 70)
 
 
 if __name__ == "__main__":
