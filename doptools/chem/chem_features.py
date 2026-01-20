@@ -673,7 +673,21 @@ class Mordred2DCalculator(DescriptorCalculator, BaseEstimator, TransformerMixin)
         else:
             mols = list(X)
         self.calculator = Calculator(descriptors, ignore_3D=True)
-        matrix = self.calculator.pandas(mols, nproc=1).select_dtypes(include='number')
+        # Batch processing for progress output
+        batch_size = 50
+        dfs = []
+        n_batches = (len(mols) + batch_size - 1) // batch_size
+        
+        for i in range(n_batches):
+            start = i * batch_size
+            end = min((i + 1) * batch_size, len(mols))
+            batch_mols = mols[start:end]
+            
+            print(f"  > Mordred: 批次 {i+1}/{n_batches} (Index {start})", flush=True)
+            df_batch = self.calculator.pandas(batch_mols, nproc=1, quiet=True).select_dtypes(include='number')
+            dfs.append(df_batch)
+            
+        matrix = pd.concat(dfs, ignore_index=True)
         self.feature_names = list(matrix.columns)
         return self
 
@@ -694,7 +708,21 @@ class Mordred2DCalculator(DescriptorCalculator, BaseEstimator, TransformerMixin)
             mols = [Chem.MolFromSmiles(str(x)) for x in X]
         else:
             mols = list(X)
-        matrix = self.calculator.pandas(mols, nproc=1).select_dtypes(include='number')
+        # Batch processing for progress output
+        batch_size = 50
+        dfs = []
+        n_batches = (len(mols) + batch_size - 1) // batch_size
+        
+        for i in range(n_batches):
+            start = i * batch_size
+            end = min((i + 1) * batch_size, len(mols))
+            batch_mols = mols[start:end]
+            
+            print(f"  > Mordred (Transform): 批次 {i+1}/{n_batches}", flush=True)
+            df_batch = self.calculator.pandas(batch_mols, nproc=1, quiet=True).select_dtypes(include='number')
+            dfs.append(df_batch)
+        
+        matrix = pd.concat(dfs, ignore_index=True)
         return matrix[self.feature_names]
     
     def get_feature_names(self):
