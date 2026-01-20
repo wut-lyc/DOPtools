@@ -72,6 +72,10 @@ class MLPipeline:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.n_jobs = n_jobs
         
+        # 解决大规模并行时的Semlock泄漏问题 (Linux)
+        if os.name == 'posix':
+            os.environ.setdefault('JOBLIB_START_METHOD', 'forkserver')
+        
         # 存储结果
         self.results = []
         self.best_models = []
@@ -206,9 +210,9 @@ class MLPipeline:
     
     def clean_features(self, X, y):
         """步骤4: 数据清洗"""
-        print("\\n" + "="*70)
+        print("-" * 70)
         print("步骤4: 数据清洗")
-        print("="*70)
+        print("-" * 70)
         
         initial_n = X.shape[1]
         
