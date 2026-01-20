@@ -6,7 +6,7 @@ Tg (玻璃化转变温度) 预测模型搭建脚本
 基于 DOPtools 教程流程:
 1. 加载数据并解析 SMILES
 2. 计算 CircuS 描述符
-3. 使用 Optuna 优化 SVR 模型超参数
+3. 使用 Optuna 优化 SVR/RFR/XGBR 模型超参数 (比较三种方法)
 4. 保存结果并可视化
 """
 
@@ -18,7 +18,6 @@ import pickle
 from chython import smiles
 from doptools import ChythonCircus
 from doptools.optimizer import launch_study
-from doptools.cli.plotter import make_regression_plot
 
 # 多进程设置
 import multiprocessing
@@ -32,6 +31,15 @@ if __name__ == "__main__":
         N_JOBS = 192  # Linux 上使用 192 核
     else:
         N_JOBS = 1  # Windows 建议用 1 避免问题
+
+# ============================================================
+# 配置参数
+# ============================================================
+N_TRIALS = 5000         # 每种方法的试验次数
+N_FOLDS = 5             # K-fold 折数
+N_REPEATS = 3           # 交叉验证重复次数
+TIMEOUT = 300           # 超时时间 (秒)
+METHODS = ["SVR", "RFR", "XGBR"]  # 要比较的方法
 
 # ============================================================
 # Step 1: 加载数据
@@ -95,115 +103,138 @@ with open("output_tg_model/circus_fragmentor.pkl", "wb") as f:
 print("描述符已保存到 output_tg_model/")
 
 # ============================================================
-# Step 4: 模型优化 (使用 Optuna + SVR)
+# Step 4: 模型优化 - 比较三种方法
 # ============================================================
-print("\n" + "=" * 60)
-print("Step 4: 开始模型超参数优化")
-print("=" * 60)
-
 if __name__ == "__main__":
-    print("使用 SVR 进行回归建模...")
-    print("优化参数: descriptor space, scaling, C, kernel, coef0")
-    print("这可能需要几分钟时间...")
+    print("\n" + "=" * 60)
+    print("Step 4: 开始模型超参数优化 (比较三种方法)")
+    print("=" * 60)
+    print(f"配置: {N_TRIALS} 试验/方法, {N_FOLDS}-fold CV, {N_REPEATS} 重复")
+    print(f"使用 {N_JOBS} 个 CPU")
+    print(f"方法: {METHODS}")
     
-    # 运行优化
-    # 参数说明:
-    # - 描述符空间字典
-    # - 目标变量 (DataFrame 格式)
-    # - 输出目录
-    # - 方法 (SVR/RFR/XGBR)
-    # - 试验次数 (减少以加快速度，正式运行可增加到 500+)
-    # - K-fold 折数
-    # - 重复次数
-    # - CPU 数量 (Windows 建议设为 1 避免多进程问题)
-    # - 超时时间 (秒)
-    # - 早停参数
-    # - 是否写入文件
+    # 存储各方法的最佳结果
+    best_results = {}
     
-    results = launch_study(
-        {"circus": descriptors},      # 描述符空间
-        data[["logTg"]],              # 目标变量
-        "output_tg_model",            # 输出目录
-        "SVR",                        # 方法
-        100,                          # 试验次数 (可调整)
-        5,                            # K-fold 折数
-        3,                            # 重复次数
-        N_JOBS,                       # CPU 数量 (Linux=4, Windows=1)
-        120,                          # 超时时间
-        (0, 0),                       # 早停 (禁用)
-        True                          # 写入文件
-    )
+    for method in METHODS:
+        print("\n" + "-" * 60)
+        print(f"优化 {method} 模型...")
+        print("-" * 60)
+        
+        output_dir = f"output_tg_model/{method}"
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # 运行优化
+        launch_study(
+            {"circus": descriptors},      # 描述符空间
+            data[["logTg"]],              # 目标变量
+            output_dir,                   # 输出目录
+            method,                       # 方法
+            N_TRIALS,                     # 试验次数
+            N_FOLDS,                      # K-fold 折数
+            N_REPEATS,                    # 重复次数
+            N_JOBS,                       # CPU 数量
+            TIMEOUT,                      # 超时时间
+            (0, 0),                       # 早停
+            True                          # 写入文件
+        )
+        
+        # 读取最佳结果
+        trials_file = f"{output_dir}/trials.all"
+        if os.path.exists(trials_file):
+            trials = pd.read_table(trials_file, sep=" ")
+            best = trials.sort_values(by="score", ascending=False).iloc[0]
+            best_results[method] = {
+                "score": best["score"],
+                "trial": best["trial"],
+                "desc": best["desc"],
+                "scaling": best["scaling"]
+            }
+            print(f"{method} 最佳 R²: {best['score']:.4f}")
     
     # ============================================================
-    # Step 5: 分析结果
+    # Step 5: 比较结果
     # ============================================================
     print("\n" + "=" * 60)
-    print("Step 5: 分析优化结果")
+    print("Step 5: 方法比较结果")
     print("=" * 60)
     
-    trials_table = results[0]
-    predictions_dict = results[1]
+    print("\n各方法最佳 R² 分数:")
+    print("-" * 40)
+    for method, result in sorted(best_results.items(), key=lambda x: x[1]["score"], reverse=True):
+        print(f"{method:6s}: R² = {result['score']:.4f}")
     
-    # 排序获取最佳结果
-    best_trials = trials_table.sort_values(by="score", ascending=False)
-    print("\n最佳 5 个试验:")
-    print(best_trials.head())
-    
-    best_trial = best_trials.iloc[0]
-    print(f"\n最佳模型:")
-    print(f"  Trial: {best_trial['trial']}")
-    print(f"  R² Score: {best_trial['score']:.4f}")
-    print(f"  描述符: {best_trial['desc']}")
-    print(f"  缩放: {best_trial['scaling']}")
-    print(f"  方法: {best_trial['method']}")
-    print(f"  C: {best_trial['C']:.4f}")
-    print(f"  Kernel: {best_trial['kernel']}")
+    # 找出最佳方法
+    if best_results:
+        best_method = max(best_results.items(), key=lambda x: x[1]["score"])
+        print(f"\n🏆 最佳方法: {best_method[0]} (R² = {best_method[1]['score']:.4f})")
+        
+        # ============================================================
+        # Step 6: 为最佳方法生成回归图
+        # ============================================================
+        print("\n" + "=" * 60)
+        print(f"Step 6: 生成最佳方法 ({best_method[0]}) 的回归图")
+        print("=" * 60)
+        
+        best_method_name = best_method[0]
+        best_trial_num = int(best_method[1]["trial"])
+        pred_file = f"output_tg_model/{best_method_name}/trial.{best_trial_num}/predictions"
+        
+        if os.path.exists(pred_file):
+            best_predictions = pd.read_table(pred_file, sep=" ")
+            
+            # 找到观测值和预测值列
+            obs_col = [c for c in best_predictions.columns if "observed" in c][0]
+            pred_cols = [c for c in best_predictions.columns if "predicted" in c]
+            
+            # 计算平均预测值
+            best_predictions["predicted_avg"] = best_predictions[pred_cols].mean(axis=1)
+            
+            # 绘制回归图
+            fig, ax = plt.subplots(figsize=(8, 8))
+            
+            observed = best_predictions[obs_col]
+            predicted = best_predictions["predicted_avg"]
+            
+            ax.scatter(observed, predicted, alpha=0.6, edgecolors='k', linewidth=0.5)
+            
+            # 添加对角线
+            min_val = min(observed.min(), predicted.min())
+            max_val = max(observed.max(), predicted.max())
+            ax.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Ideal')
+            
+            # 计算统计指标
+            from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+            r2 = r2_score(observed, predicted)
+            mae = mean_absolute_error(observed, predicted)
+            rmse = np.sqrt(mean_squared_error(observed, predicted))
+            
+            ax.set_xlabel("Observed logTg", fontsize=12)
+            ax.set_ylabel("Predicted logTg", fontsize=12)
+            ax.set_title(f"Tg Prediction Model ({best_method_name})\nR² = {r2:.4f}, MAE = {mae:.4f}, RMSE = {rmse:.4f}", fontsize=14)
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            
+            plt.tight_layout()
+            plt.savefig("output_tg_model/best_model_regression_plot.png", dpi=150)
+            print(f"回归图已保存到 output_tg_model/best_model_regression_plot.png")
+            print(f"\n最佳模型性能:")
+            print(f"  方法: {best_method_name}")
+            print(f"  R² = {r2:.4f}")
+            print(f"  MAE = {mae:.4f}")
+            print(f"  RMSE = {rmse:.4f}")
     
     # ============================================================
-    # Step 6: 生成回归图
+    # 输出汇总
     # ============================================================
     print("\n" + "=" * 60)
-    print("Step 6: 生成回归图")
+    print("完成！结果目录结构:")
     print("=" * 60)
-    
-    # 获取最佳模型的预测结果
-    best_predictions = predictions_dict[best_trial['trial']]["predictions"]
-    
-    # 计算平均预测值
-    pred_cols = [c for c in best_predictions.columns if "predicted" in c]
-    best_predictions["logTg.predicted.avg"] = best_predictions[pred_cols].mean(axis=1)
-    
-    # 绘制回归图
-    fig, ax = plt.subplots(figsize=(8, 8))
-    
-    observed = best_predictions["logTg.observed"]
-    predicted = best_predictions["logTg.predicted.avg"]
-    
-    ax.scatter(observed, predicted, alpha=0.6, edgecolors='k', linewidth=0.5)
-    
-    # 添加对角线
-    min_val = min(observed.min(), predicted.min())
-    max_val = max(observed.max(), predicted.max())
-    ax.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label='Ideal')
-    
-    # 计算统计指标
-    from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
-    r2 = r2_score(observed, predicted)
-    mae = mean_absolute_error(observed, predicted)
-    rmse = np.sqrt(mean_squared_error(observed, predicted))
-    
-    ax.set_xlabel("Observed logTg", fontsize=12)
-    ax.set_ylabel("Predicted logTg", fontsize=12)
-    ax.set_title(f"Tg Prediction Model\nR² = {r2:.4f}, MAE = {mae:.4f}, RMSE = {rmse:.4f}", fontsize=14)
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.savefig("output_tg_model/regression_plot.png", dpi=150)
-    print("回归图已保存到 output_tg_model/regression_plot.png")
-    
-    plt.show()
-    
-    print("\n" + "=" * 60)
-    print("完成！所有结果已保存到 output_tg_model/ 目录")
+    print("output_tg_model/")
+    print("├── SVR/           # SVR 优化结果")
+    print("├── RFR/           # 随机森林优化结果")
+    print("├── XGBR/          # XGBoost 优化结果")
+    print("├── circus_descriptors.csv")
+    print("├── circus_fragmentor.pkl")
+    print("└── best_model_regression_plot.png")
     print("=" * 60)

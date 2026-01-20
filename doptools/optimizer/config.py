@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with this program; if not, see <https://www.gnu.org/licenses/>.
 
-from doptools.chem.chem_features import ChythonCircus, ChythonLinear, Fingerprinter
+from doptools.chem.chem_features import ChythonCircus, ChythonLinear, Fingerprinter, Mordred2DCalculator, RDKit2DCalculator
 
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.svm import SVR, SVC
@@ -41,7 +41,8 @@ calculators = {
     'atompairs': "Fingerprinter(fp_type='atompairs', **descriptor_params)",
     'avalon': "Fingerprinter(fp_type='avalon', **descriptor_params)",
     'torsion': "Fingerprinter(fp_type='torsion', **descriptor_params)",
-    #'mordred2d': "Mordred2DCalculator(**descriptor_params)",
+    'mordred2d': "Mordred2DCalculator(**descriptor_params)",
+    'rdkit2d': "RDKit2DCalculator(**descriptor_params)",
 }
 
 

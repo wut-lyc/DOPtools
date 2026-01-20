@@ -1,0 +1,83 @@
+<svg width="7.64cm" height="3.73cm" viewBox="-6.26 -1.70 7.64 3.73" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1">
+  <g id="3ad52745-5809-476a-902d-ac6d2c9b17a1-molecule">
+    <defs>
+      <g id="3ad52745-5809-476a-902d-ac6d2c9b17a1-symbols" font-size="0.50" font-family="sans-serif">
+        <text id="3ad52745-5809-476a-902d-ac6d2c9b17a1-2" x="-0.71" y="0.41" dx="-0.20" dy="0.20">N</text>
+        <text id="3ad52745-5809-476a-902d-ac6d2c9b17a1-3" x="-0.80" y="1.23" dx="-0.20" dy="0.20">N</text>
+        <text id="3ad52745-5809-476a-902d-ac6d2c9b17a1-4" x="-1.61" y="1.40" dx="-0.20" dy="0.20">N</text>
+        <text id="3ad52745-5809-476a-902d-ac6d2c9b17a1-6" x="-1.47" y="0.08" dx="-0.20" dy="0.20">N</text>
+        <text id="3ad52745-5809-476a-902d-ac6d2c9b17a1-7" x="-2.84" y="0.60" dx="-0.20" dy="0.20">N</text>
+        <text id="3ad52745-5809-476a-902d-ac6d2c9b17a1-8" x="-3.18" y="-0.15" dx="-0.20" dy="0.20">N</text>
+      </g>
+      <g id="3ad52745-5809-476a-902d-ac6d2c9b17a1-mapping" font-size="0.25" font-family="monospace" text-anchor="end">
+        <text x="0.00" y="-0.00" dx="-0.05" dy="0.20">1</text>
+        <text x="-0.71" y="0.41" dx="-0.15" dy="0.35">2</text>
+        <text x="-0.80" y="1.23" dx="-0.15" dy="0.35">3</text>
+        <text x="-1.61" y="1.40" dx="-0.15" dy="0.35">4</text>
+        <text x="-2.02" y="0.69" dx="-0.05" dy="0.20">5</text>
+        <text x="-1.47" y="0.08" dx="-0.15" dy="0.35">6</text>
+        <text x="-2.84" y="0.60" dx="-0.15" dy="0.35">7</text>
+        <text x="-3.18" y="-0.15" dx="-0.15" dy="0.35">8</text>
+        <text x="-4.00" y="-0.24" dx="-0.05" dy="0.20">9</text>
+        <text x="-4.33" y="-0.99" dx="-0.05" dy="0.20">10</text>
+        <text x="-5.15" y="-1.08" dx="-0.05" dy="0.20">11</text>
+        <text x="-5.64" y="-0.41" dx="-0.05" dy="0.20">12</text>
+        <text x="-5.30" y="0.35" dx="-0.05" dy="0.20">13</text>
+        <text x="-4.48" y="0.43" dx="-0.05" dy="0.20">14</text>
+      </g>
+      <mask id="3ad52745-5809-476a-902d-ac6d2c9b17a1-mask">
+        <rect x="-6.26" y="-1.70" width="7.64" height="3.73" fill="white"/>
+        <g>
+          <circle cx="-0.71" cy="0.41" r="0.20"/>
+          <circle cx="-0.80" cy="1.23" r="0.20"/>
+          <circle cx="-1.61" cy="1.40" r="0.20"/>
+          <circle cx="-1.47" cy="0.08" r="0.20"/>
+          <circle cx="-2.84" cy="0.60" r="0.20"/>
+          <circle cx="-3.18" cy="-0.15" r="0.20"/>
+        </g>
+        <g stroke="black">
+          <use xlink:href="#3ad52745-5809-476a-902d-ac6d2c9b17a1-symbols" stroke-width="0.05"/>
+          <use xlink:href="#3ad52745-5809-476a-902d-ac6d2c9b17a1-mapping" stroke-width="0.03"/>
+        </g>
+      </mask>
+    </defs>
+    <g fill="none" stroke="black" stroke-width="0.04" mask="url(#3ad52745-5809-476a-902d-ac6d2c9b17a1-mask)">
+      <line x1="0.00" y1="-0.00" x2="-0.71" y2="0.41"/>
+      <line x1="-0.71" y1="0.41" x2="-0.80" y2="1.23"/>
+      <line x1="-0.71" y1="0.41" x2="-1.47" y2="0.08"/>
+      <line x1="-0.80" y1="1.23" x2="-1.61" y2="1.40"/>
+      <line x1="-1.61" y1="1.40" x2="-2.02" y2="0.69"/>
+      <line x1="-2.02" y1="0.69" x2="-1.47" y2="0.08"/>
+      <line x1="-2.02" y1="0.69" x2="-2.84" y2="0.60"/>
+      <line x1="-2.90" y1="0.63" x2="-3.23" y2="-0.13"/>
+      <line x1="-2.79" y1="0.58" x2="-3.12" y2="-0.17"/>
+      <line x1="-3.18" y1="-0.15" x2="-4.00" y2="-0.24"/>
+      <line x1="-4.00" y1="-0.24" x2="-4.33" y2="-0.99"/>
+      <line x1="-4.00" y1="-0.24" x2="-4.48" y2="0.43"/>
+      <line x1="-4.33" y1="-0.99" x2="-5.15" y2="-1.08"/>
+      <line x1="-5.15" y1="-1.08" x2="-5.64" y2="-0.41"/>
+      <line x1="-5.64" y1="-0.41" x2="-5.30" y2="0.35"/>
+      <line x1="-5.30" y1="0.35" x2="-4.48" y2="0.43"/>
+      <line x1="-0.86" y1="0.50" x2="-0.93" y2="1.12" stroke-dasharray="0.15 0.05"/>
+      <line x1="-0.93" y1="1.12" x2="-1.54" y2="1.25" stroke-dasharray="0.15 0.05"/>
+      <line x1="-1.54" y1="1.25" x2="-1.85" y2="0.71" stroke-dasharray="0.15 0.05"/>
+      <line x1="-1.85" y1="0.71" x2="-1.43" y2="0.25" stroke-dasharray="0.15 0.05"/>
+      <line x1="-1.43" y1="0.25" x2="-0.86" y2="0.50" stroke-dasharray="0.15 0.05"/>
+      <line x1="-4.16" y1="-0.25" x2="-4.43" y2="-0.86" stroke-dasharray="0.15 0.05"/>
+      <line x1="-4.43" y1="-0.86" x2="-5.09" y2="-0.93" stroke-dasharray="0.15 0.05"/>
+      <line x1="-5.09" y1="-0.93" x2="-5.48" y2="-0.39" stroke-dasharray="0.15 0.05"/>
+      <line x1="-5.48" y1="-0.39" x2="-5.21" y2="0.21" stroke-dasharray="0.15 0.05"/>
+      <line x1="-5.21" y1="0.21" x2="-4.55" y2="0.28" stroke-dasharray="0.15 0.05"/>
+      <line x1="-4.55" y1="0.28" x2="-4.16" y2="-0.25" stroke-dasharray="0.15 0.05"/>
+    </g>
+    <g font-size="0.50" font-family="sans-serif">
+      <use xlink:href="#3ad52745-5809-476a-902d-ac6d2c9b17a1-2" fill="#3050F8"/>
+      <use xlink:href="#3ad52745-5809-476a-902d-ac6d2c9b17a1-3" fill="#3050F8"/>
+      <use xlink:href="#3ad52745-5809-476a-902d-ac6d2c9b17a1-4" fill="#3050F8"/>
+      <use xlink:href="#3ad52745-5809-476a-902d-ac6d2c9b17a1-6" fill="#3050F8"/>
+      <use xlink:href="#3ad52745-5809-476a-902d-ac6d2c9b17a1-7" fill="#3050F8"/>
+      <use xlink:href="#3ad52745-5809-476a-902d-ac6d2c9b17a1-8" fill="#3050F8"/>
+    </g>
+    <use xlink:href="#3ad52745-5809-476a-902d-ac6d2c9b17a1-mapping" fill="#0305A7"/>
+  </g>
+</svg>

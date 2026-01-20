@@ -23,9 +23,9 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from chython import smiles, CGRContainer, MoleculeContainer, ReactionContainer
 from typing import Optional, List, Dict, Tuple, Iterable
 from rdkit import Chem
-from rdkit.Chem import AllChem, rdMolDescriptors
+from rdkit.Chem import AllChem, rdMolDescriptors, Descriptors
 from rdkit.Avalon import pyAvalonTools
-#from mordred import Calculator, descriptors
+from mordred import Calculator, descriptors
 from doptools.chem.utils import _add_stereo_substructure
 from functools import partialmethod
 
@@ -644,50 +644,122 @@ class ComplexFragmentor(DescriptorCalculator, BaseEstimator, TransformerMixin):
         return res
 
 
-# class Mordred2DCalculator(DescriptorCalculator, BaseEstimator, TransformerMixin):
-#     """
-#     Mordred2DCalculator class is a scikit-learn compatible transformer that
-#     calculates Mordred 2D descriptors.
-#     """
-#     def __init__(self):
-#         self._size = ()
-#         self._name = "mordred2D"
-#         self.calculator = None
-#         self._short_name = "M2"
+class Mordred2DCalculator(DescriptorCalculator, BaseEstimator, TransformerMixin):
+    """
+    Mordred2DCalculator class is a scikit-learn compatible transformer that
+    calculates Mordred 2D descriptors.
+    """
+    def __init__(self, fmt="mol"):
+        self._size = ()
+        self._name = "mordred2D"
+        self.calculator = None
+        self._short_name = "M2"
+        self.feature_names = []
+        self.fmt = fmt
 
-#     def fit(self, X, y=None):
-#         """
-#         Fits the Mordred calculator.
+    def fit(self, X, y=None):
+        """
+        Fits the Mordred calculator.
 
-#         :param X: the array/list/... of molecules to train the calculator.
-#         :type X: array-like, [MoleculeContainers]
+        :param X: the array/list/... of molecules to train the calculator.
+        :type X: array-like, [MoleculeContainers]
 
-#         :param y: required by default by scikit-learn standards, but
-#             doesn't change the function at all.
-#         :type y: None
-#         """
-#         mols = [Chem.MolFromSmiles(str(x)) for x in X]
-#         self.calculator = Calculator(descriptors, ignore_3D=True)
-#         matrix = self.calculator.pandas(mols).select_dtypes(include='number')
-#         self.feature_names = list(matrix.columns)
-#         return self
+        :param y: required by default by scikit-learn standards, but
+            doesn't change the function at all.
+        :type y: None
+        """
+        if self.fmt == "smiles":
+            mols = [Chem.MolFromSmiles(str(x)) for x in X]
+        else:
+            mols = [Chem.MolFromSmiles(str(x)) for x in X]
+        self.calculator = Calculator(descriptors, ignore_3D=True)
+        matrix = self.calculator.pandas(mols).select_dtypes(include='number')
+        self.feature_names = list(matrix.columns)
+        return self
 
-#     def transform(self, X, y=None):
-#         """
-#         Transforms the given array of molecules to a data frame
-#         with features and their values.
+    def transform(self, X, y=None):
+        """
+        Transforms the given array of molecules to a data frame
+        with features and their values.
 
-#         :param X: the array/list/... of molecules to transform to feature table
-#             using trained feature list.
-#         :type X: array-like, [MoleculeContainers]
+        :param X: the array/list/... of molecules to transform to feature table
+            using trained feature list.
+        :type X: array-like, [MoleculeContainers]
 
-#         :param y: required by default by scikit-learn standards, but
-#             doesn't change the function at all.
-#         :type y: None
-#         """
-#         mols = [Chem.MolFromSmiles(str(x)) for x in X]
-#         matrix = self.calculator.pandas(mols).select_dtypes(include='number')
-#         return matrix[self.feature_names]
+        :param y: required by default by scikit-learn standards, but
+            doesn't change the function at all.
+        :type y: None
+        """
+        if self.fmt == "smiles":
+            mols = [Chem.MolFromSmiles(str(x)) for x in X]
+        else:
+            mols = [Chem.MolFromSmiles(str(x)) for x in X]
+        matrix = self.calculator.pandas(mols).select_dtypes(include='number')
+        return matrix[self.feature_names]
+    
+    def get_feature_names(self):
+        return self.feature_names
+
+
+class RDKit2DCalculator(DescriptorCalculator, BaseEstimator, TransformerMixin):
+    """
+    RDKit2DCalculator class is a scikit-learn compatible transformer that
+    calculates RDKit 2D molecular descriptors (not fingerprints).
+    Includes ~208 descriptors like MolWt, LogP, TPSA, etc.
+    """
+    def __init__(self, fmt="mol"):
+        self._size = ()
+        self._name = "rdkit2D"
+        self._short_name = "RD2"
+        self.feature_names = []
+        self.fmt = fmt
+
+    def fit(self, X, y=None):
+        """
+        Fits the RDKit descriptor calculator.
+
+        :param X: the array/list/... of molecules to train the calculator.
+        :type X: array-like, [MoleculeContainers]
+
+        :param y: required by default by scikit-learn standards, but
+            doesn't change the function at all.
+        :type y: None
+        """
+        # Get all available RDKit descriptors
+        self.feature_names = [desc[0] for desc in Descriptors._descList]
+        return self
+
+    def transform(self, X, y=None):
+        """
+        Transforms the given array of molecules to a data frame
+        with features and their values.
+
+        :param X: the array/list/... of molecules to transform to feature table
+            using trained feature list.
+        :type X: array-like, [MoleculeContainers]
+
+        :param y: required by default by scikit-learn standards, but
+            doesn't change the function at all.
+        :type y: None
+        """
+        results = []
+        for x in X:
+            if self.fmt == "smiles":
+                mol = Chem.MolFromSmiles(str(x))
+            else:
+                mol = Chem.MolFromSmiles(str(x))
+            
+            if mol is not None:
+                desc_dict = Descriptors.CalcMolDescriptors(mol)
+                results.append(desc_dict)
+            else:
+                # If molecule fails to parse, append NaN values
+                results.append({name: np.nan for name in self.feature_names})
+        
+        return pd.DataFrame(results, columns=self.feature_names)
+    
+    def get_feature_names(self):
+        return self.feature_names
         
 
 class PassThrough(DescriptorCalculator, BaseEstimator, TransformerMixin):
