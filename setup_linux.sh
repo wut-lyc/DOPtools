@@ -85,7 +85,7 @@ pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 安装 Mordred 描述符库
 echo "安装 Mordred 描述符库..."
-pip install mordred -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install mordred seaborn -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # ============================================================
 # 验证安装
