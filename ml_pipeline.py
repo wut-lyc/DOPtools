@@ -31,6 +31,7 @@ import warnings
 import itertools
 from pathlib import Path
 from datetime import datetime
+from rdkit import Chem
 
 import numpy as np
 import pandas as pd
@@ -90,7 +91,12 @@ class MLPipeline:
             try:
                 mol = smiles(smi)
                 mol.canonicalize()
-                mols.append(mol)
+                # 验证RDKit兼容性
+                if Chem.MolFromSmiles(str(mol)) is None:
+                    print(f"警告: 第 {i} 行 SMILES 被RDKit拒绝: {smi[:50]}...")
+                    mols.append(None)
+                else:
+                    mols.append(mol)
             except:
                 mols.append(None)
         
@@ -98,6 +104,9 @@ class MLPipeline:
         data_clean = data[valid_mask].reset_index(drop=True)
         mols_clean = [m for m in mols if m is not None]
         smiles_clean = [s for s, v in zip(smiles_list, valid_mask) if v]
+        
+        # 创建RDKit分子列表 (用于Mordred和RDKit计算器)
+        mols_rdkit = [Chem.MolFromSmiles(str(m)) for m in mols_clean]
         
         print(f"成功解析 {len(mols_clean)}/{len(mols)} 个分子")
         
@@ -107,8 +116,8 @@ class MLPipeline:
         # RDKit2D
         print("\\n[1/4] RDKit 2D...")
         rdkit_calc = RDKit2DCalculator(fmt="mol")
-        rdkit_calc.fit(mols_clean)
-        rdkit_desc = rdkit_calc.transform(mols_clean)
+        rdkit_calc.fit(mols_rdkit)
+        rdkit_desc = rdkit_calc.transform(mols_rdkit)
         rdkit_desc.columns = ["RDKit_" + c for c in rdkit_desc.columns]
         all_descriptors.append(rdkit_desc)
         print(f"  ✓ {rdkit_desc.shape[1]} 个描述符")
@@ -116,8 +125,8 @@ class MLPipeline:
         # Mordred2D
         print("\\n[2/4] Mordred 2D...")
         mordred_calc = Mordred2DCalculator(fmt="mol")
-        mordred_calc.fit(mols_clean)
-        mordred_desc = mordred_calc.transform(mols_clean)
+        mordred_calc.fit(mols_rdkit)
+        mordred_desc = mordred_calc.transform(mols_rdkit)
         mordred_desc.columns = ["Mordred_" + c for c in mordred_desc.columns]
         all_descriptors.append(mordred_desc)
         print(f"  ✓ {mordred_desc.shape[1]} 个描述符")
