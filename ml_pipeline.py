@@ -78,12 +78,12 @@ class MLPipeline:
         
     def calculate_descriptors(self, data, smiles_col):
         """步骤1: 计算描述符"""
-        print("\\n" + "="*70)
+        print("-" * 70)
         print("步骤1: 计算分子描述符")
-        print("="*70)
+        print("-" * 70)
         
         # 解析分子
-        print("\\n解析SMILES...")
+        print("解析SMILES...")
         mols = []
         smiles_list = data[smiles_col].tolist()
         
@@ -114,7 +114,7 @@ class MLPipeline:
         all_descriptors = []
         
         # RDKit2D
-        print("\\n[1/4] RDKit 2D...")
+        print("[1/4] RDKit 2D...")
         rdkit_calc = RDKit2DCalculator(fmt="mol")
         rdkit_calc.fit(mols_rdkit)
         rdkit_desc = rdkit_calc.transform(mols_rdkit)
@@ -123,7 +123,7 @@ class MLPipeline:
         print(f"  ✓ {rdkit_desc.shape[1]} 个描述符")
         
         # Mordred2D
-        print("\\n[2/4] Mordred 2D...")
+        print("[2/4] Mordred 2D...")
         mordred_calc = Mordred2DCalculator(fmt="mol")
         mordred_calc.fit(mols_rdkit)
         mordred_desc = mordred_calc.transform(mols_rdkit)
@@ -132,7 +132,7 @@ class MLPipeline:
         print(f"  ✓ {mordred_desc.shape[1]} 个描述符")
         
         # CircuS
-        print("\\n[3/4] ChythonCircus...")
+        print("[3/4] ChythonCircus...")
         circus_calc = ChythonCircus(lower=0, upper=4, fmt="mol")
         circus_calc.fit(mols_clean)
         circus_desc = circus_calc.transform(mols_clean)
@@ -141,7 +141,7 @@ class MLPipeline:
         print(f"  ✓ {circus_desc.shape[1]} 个描述符")
         
         # ChyLine
-        print("\\n[4/4] ChythonLinear...")
+        print("[4/4] ChythonLinear...")
         linear_calc = ChythonLinear(lower=0, upper=4, fmt="mol")
         linear_calc.fit(mols_clean)
         linear_desc = linear_calc.transform(mols_clean)
@@ -151,7 +151,7 @@ class MLPipeline:
         
         # 合并
         X = pd.concat(all_descriptors, axis=1)
-        print(f"\\n总计: {X.shape[1]} 个描述符")
+        print(f"总计: {X.shape[1]} 个描述符")
         
         return data_clean, X
     
@@ -432,7 +432,7 @@ class MLPipeline:
         for model_name, config in configs.items():
             model_idx += 1
             now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"\\n[{now_str}] [配置 {config_id}/{total_configs}] [模型 {model_idx}/{total_models}] 训练 {model_name}...", flush=True)
+            print(f"[{now_str}] [配置 {config_id}/{total_configs}] [模型 {model_idx}/{total_models}] 训练 {model_name}...", flush=True)
             
             # 网格搜索
             grid_search = GridSearchCV(
@@ -469,7 +469,7 @@ class MLPipeline:
             # Y随机化
             y_random_r2 = self.y_randomization_test(best_model, X_full, y_full, n_iterations=50)
             y_random_mean = np.mean(y_random_r2)
-            print(f"Y随机化R²均值: {y_random_mean:.4f}")
+            print(f"  > Y随机化R²均值: {y_random_mean:.4f}")
             
             # 保存结果
             result = {
@@ -530,7 +530,8 @@ class MLPipeline:
                 
                 for feat_method, n_features in feature_methods:
                     config_id += 1
-                    print(f"\\n{'#'*80}")
+                    print("")
+                    print(f"{'#'*80}")
                     print(f"[进度: {config_id}/{total_configs}] 处理配置")
                     print(f"  - 缺失值处理: {missing_method}")
                     print(f"  - 数据缩放:   {scale_method}")

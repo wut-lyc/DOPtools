@@ -673,7 +673,7 @@ class Mordred2DCalculator(DescriptorCalculator, BaseEstimator, TransformerMixin)
         else:
             mols = list(X)
         self.calculator = Calculator(descriptors, ignore_3D=True)
-        matrix = self.calculator.pandas(mols).select_dtypes(include='number')
+        matrix = self.calculator.pandas(mols, nproc=1).select_dtypes(include='number')
         self.feature_names = list(matrix.columns)
         return self
 
@@ -694,7 +694,7 @@ class Mordred2DCalculator(DescriptorCalculator, BaseEstimator, TransformerMixin)
             mols = [Chem.MolFromSmiles(str(x)) for x in X]
         else:
             mols = list(X)
-        matrix = self.calculator.pandas(mols).select_dtypes(include='number')
+        matrix = self.calculator.pandas(mols, nproc=1).select_dtypes(include='number')
         return matrix[self.feature_names]
     
     def get_feature_names(self):
@@ -743,7 +743,10 @@ class RDKit2DCalculator(DescriptorCalculator, BaseEstimator, TransformerMixin):
         :type y: None
         """
         results = []
-        for x in X:
+        for i, x in enumerate(X):
+            if i > 0 and i % 50 == 0:
+                print(f"  > RDKit: 处理 {i}/{len(X)}", flush=True)
+
             if self.fmt == "smiles":
                 mol = Chem.MolFromSmiles(str(x))
             else:
